@@ -1,0 +1,130 @@
+---
+name: Lambda CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - templates/lambda/backend/**
+      - templates/lambda/terraform/**
+
+env:
+  TF_VAR_aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  TF_VAR_aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  TF_VAR_aws-region: ${{ secrets.AWS_REGION }}
+  TF_VAR_project_name: 'lambda-template'
+  TF_VAR_environment: 'dev'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: templates/lambda/backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: templates/lambda/backend
+        run: npm ci
+
+      - name: Lint code
+        working-directory: templates/lambda/backend
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: templates/lambda/backend
+        run: npm test
+
+      - name: Build and package
+        working-directory: templates/lambda/backend
+        run: |
+          npm run package
+          if [ ! -f function.zip ]; then
+            echo "Error: function.zip was not created"
+            exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-function
+          path: templates/lambda/backend/function.zip
+          retention-days: 5
+
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Lambda artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-function
+          path: templates/lambda/backend
+
+      - name: Set Lambda filename
+        run: |
+          echo "TF_VAR_filename=$(pwd)/templates/lambda/backend/function.zip" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.10.5
+
+      - name: Terraform Init
+        run: terraform -chdir=templates/lambda/terraform init
+
+      - name: Terraform Validate
+        run: terraform -chdir=templates/lambda/terraform validate
+
+      - name: Terraform Plan
+        run: terraform -chdir=templates/lambda/terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform -chdir=templates/lambda/terraform apply tfplan
+
+  # destroy:
+  #   runs-on: ubuntu-latest
+    
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ secrets.AWS_REGION }}
+
+  #     - name: Setup Terraform
+  #       uses: hashicorp/setup-terraform@v2
+  #       with:
+  #         terraform_version: 1.10.5
+
+  #     - name: Terraform Init
+  #       run: terraform -chdir=templates/lambda/terraform init
+
+  #     - name: Terraform Destroy
+  #       run: terraform -chdir=templates/lambda/terraform destroy -auto-approve 
