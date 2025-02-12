@@ -1,7 +1,6 @@
 resource "aws_apigatewayv2_api" "main" {
   name          = var.name
   protocol_type = "HTTP"
-  
   tags = var.tags
 }
 
@@ -9,7 +8,6 @@ resource "aws_apigatewayv2_stage" "main" {
   api_id = aws_apigatewayv2_api.main.id
   name   = var.environment
   auto_deploy = true
-  
   tags = var.tags
 }
 
@@ -32,6 +30,5 @@ resource "aws_lambda_permission" "api_gw" {
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_function_name
   principal     = "apigateway.amazonaws.com"
-  
   source_arn = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
 } 
