@@ -21,7 +21,6 @@ async function initializePool(): Promise<void> {
   });
 }
 
-// Common response headers
 const defaultHeaders = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
@@ -89,7 +88,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     console.log('Received event:', JSON.stringify(event, null, 2));
 
-    // Initialize the pool if it hasn't been initialized yet
     if (!pool) {
       await initializePool();
     }
