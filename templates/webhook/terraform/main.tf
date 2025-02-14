@@ -28,6 +28,13 @@ module "api_gateway" {
   tags                 = local.tags
 }
 
+module "vpc" {
+  source = "./modules/vpc"
+
+  environment = var.environment
+  vpc_cidr    = "10.0.0.0/16"
+}
+
 module "rds" {
   source = "./modules/rds"
 
@@ -38,5 +45,8 @@ module "rds" {
   instance_class           = "db.t3.micro"
   allocated_storage        = 20
   lambda_security_group_id = module.lambda.security_group_id
+  vpc_id                   = module.vpc.vpc_id
+  subnet_ids               = module.vpc.private_subnet_ids
   tags                     = local.tags
+  depends_on               = [module.vpc]
 }

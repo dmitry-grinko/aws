@@ -39,4 +39,14 @@ variable "tags" {
 variable "lambda_security_group_id" {
   description = "Security group ID of the Lambda function"
   type        = string
+}
+
+variable "vpc_id" {
+  description = "ID of the VPC"
+  type        = string
+}
+
+variable "subnet_ids" {
+  description = "List of subnet IDs for the RDS instance"
+  type        = list(string)
 } 
