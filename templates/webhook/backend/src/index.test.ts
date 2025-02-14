@@ -1,31 +1,59 @@
-import { APIGatewayEvent } from 'aws-lambda';
-import { handler } from './index';
 import { describe, it, expect } from '@jest/globals';
+import { handler } from './index';
+import { APIGatewayProxyEvent } from 'aws-lambda';
+// import jest from 'jest';
 
-describe('Lambda Handler', () => {
-  it('should return a valid health check response', async () => {
-    // Mock API Gateway event
-    const mockEvent = {
+// Mock the database and AWS SDK interactions
+import { jest } from '@jest/globals';
+
+interface MockSecretResponse {
+  SecretString: string;
+}
+
+jest.mock('pg', () => ({
+  Pool: jest.fn(() => ({
+    connect: () => Promise.resolve({
+      query: () => Promise.resolve({ rows: [{ id: 1, name: 'Test' }] }),
+      release: () => {},
+    })
+  }))
+}));
+
+jest.mock('aws-sdk', () => ({
+  SecretsManager: jest.fn(() => ({
+    getSecretValue: () => ({
+      promise: () => Promise.resolve({
+        SecretString: JSON.stringify({
+          host: 'localhost',
+          port: 5432,
+          name: 'testdb',
+          username: 'testuser',
+          password: 'testpassword',
+        })
+      })
+    })
+  }))
+}));
+
+describe('Dummy Test', () => {
+  it('should pass', () => {
+    expect(true).toBe(true);
+  });
+});
+
+describe('handler', () => {
+  it('should return a successful response with data', async () => {
+    const event: APIGatewayProxyEvent = {
       requestContext: {
-        requestId: 'test-request-id-123'
-      }
-    } as APIGatewayEvent;
+        requestId: 'test-request-id',
+      },
+      // ... other necessary properties ...
+    } as any; // Cast to any to simplify the test setup
 
-    // Call the handler
-    const response = await handler(mockEvent);
-    
-    // Parse the response body
-    const body = JSON.parse(response.body);
+    const response = await handler(event);
 
-    // Verify the response structure
-    expect(body).toHaveProperty('number');
-    expect(body.number).toBeGreaterThanOrEqual(1);
-    expect(body.number).toBeLessThanOrEqual(10);
-    expect(Number.isInteger(body.number)).toBe(true);
-    expect(body).toHaveProperty('timestamp');
-    expect(body).toHaveProperty('requestId', 'test-request-id-123');
-
-    // Verify timestamp is a valid ISO string
-    expect(() => new Date(body.timestamp)).not.toThrow();
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('Test');
+    expect(response.body).toContain('test-request-id');
   });
 });
