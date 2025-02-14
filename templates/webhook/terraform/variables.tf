@@ -23,3 +23,21 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "database_password" {
+  type        = string
+  description = "The password for the RDS database"
+  sensitive   = true
+}
+
+variable "database_name" {
+  type        = string
+  description = "The name of the RDS database"
+}
+
+variable "database_username" {
+  type        = string
+  description = "The username for the RDS database"
+}
+
+

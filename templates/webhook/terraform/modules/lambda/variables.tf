@@ -32,3 +32,8 @@ variable "tags" {
   type        = map(string)
   description = "Tags to apply to resources"
 }
+
+variable "rds_arn" {
+  description = "The ARN of the RDS instance"
+  type        = string
+}

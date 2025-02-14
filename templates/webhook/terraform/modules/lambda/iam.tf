@@ -19,4 +19,48 @@ resource "aws_iam_role" "lambda_role" {
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Custom policy for RDS access
+data "aws_iam_policy_document" "lambda_rds_access" {
+  statement {
+    actions = [
+      "rds-db:connect",
+      "rds:*"
+    ]
+    resources = [
+      var.rds_arn,
+      "arn:aws:rds-db:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:dbuser:*/${var.function_name}"
+    ]
+  }
+
+  statement {
+    actions = [
+      "ec2:CreateNetworkInterface",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DeleteNetworkInterface",
+      "ec2:AssignPrivateIpAddresses",
+      "ec2:UnassignPrivateIpAddresses"
+    ]
+    resources = ["*"]
+  }
+}
+
+# Get current AWS region and account ID
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
+# Create the RDS access policy
+resource "aws_iam_policy" "lambda_rds_access" {
+  name        = "${var.function_name}-rds-access"
+  description = "IAM policy for Lambda to access RDS"
+  policy      = data.aws_iam_policy_document.lambda_rds_access.json
+}
+
+# Attach the RDS access policy to the Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_rds_access" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_rds_access.arn
 } 
+
+
