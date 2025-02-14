@@ -2,19 +2,24 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Pool, QueryResult } from 'pg';
 import { SecretsManager } from 'aws-sdk';
 
-// Initialize the connection pool outside the handler to reuse connections
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  ssl: {
-    rejectUnauthorized: false // Required for AWS RDS SSL connections
-  }
-});
-
 const secretsManager = new SecretsManager();
+
+// Fetch database credentials once and initialize the pool
+let pool: Pool;
+
+async function initializePool() {
+  const dbCredentials = await getDatabaseCredentials();
+  pool = new Pool({
+    host: dbCredentials.host,
+    port: dbCredentials.port,
+    database: dbCredentials.name,
+    user: dbCredentials.username,
+    password: dbCredentials.password,
+    ssl: {
+      rejectUnauthorized: false // Required for AWS RDS SSL connections
+    }
+  });
+}
 
 // Common response headers
 const defaultHeaders = {
@@ -24,7 +29,7 @@ const defaultHeaders = {
 };
 
 interface ResponseBody {
-  data?: any;
+  data?: Record<string, unknown>;
   message?: string;
   error?: string;
   timestamp?: string;
@@ -40,10 +45,9 @@ const createResponse = (
   body: JSON.stringify(body),
 });
 
-const fetchDataFromDatabase = async (pool: Pool): Promise<QueryResult> => {
+const fetchDataFromDatabase = async (): Promise<QueryResult> => {
   const client = await pool.connect();
   try {
-    // Replace 'your_table_name' with your actual table name
     return await client.query('SELECT * FROM your_table_name');
   } finally {
     client.release();
@@ -54,7 +58,7 @@ const getRequestId = (event: APIGatewayProxyEvent): string => {
   return event.requestContext?.requestId || 'unknown';
 };
 
-async function getDatabaseCredentials() {
+async function getDatabaseCredentials(): Promise<Record<string, any>> {
   const secretValue = await secretsManager.getSecretValue({
     SecretId: process.env.SECRETS_ARN!
   }).promise();
@@ -62,44 +66,39 @@ async function getDatabaseCredentials() {
   return JSON.parse(secretValue.SecretString!);
 }
 
+function handleError(error: unknown, event: APIGatewayProxyEvent): APIGatewayProxyResult {
+  console.error(
+    'Error processing request:',
+    error instanceof Error ? error.message : String(error)
+  );
+
+  return createResponse(500, {
+    message: 'Internal server error',
+    error: error instanceof Error ? error.message : 'Unknown error',
+    requestId: getRequestId(event)
+  });
+}
+
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     console.log('Received event:', JSON.stringify(event, null, 2));
 
-    // Fetch database credentials
-    const dbCredentials = await getDatabaseCredentials();
-    console.log('Database credentials:', dbCredentials);
+    // Initialize the pool if it hasn't been initialized yet
+    if (!pool) {
+      await initializePool();
+    }
 
-    // Update the pool configuration with the fetched credentials
-    const pool = new Pool({
-      host: dbCredentials.host,
-      port: dbCredentials.port,
-      database: dbCredentials.name,
-      user: dbCredentials.username,
-      password: dbCredentials.password,
-      ssl: {
-        rejectUnauthorized: false // Required for AWS RDS SSL connections
-      }
-    });
+    const result = await fetchDataFromDatabase();
 
-    const result = await fetchDataFromDatabase(pool);
-    
+    console.log('Result:', result.rows);
+
     return createResponse(200, {
-      data: result.rows,
-      timestamp: new Date().toISOString(),
+      data: Object.fromEntries(result.rows.map((row, i) => [i, row])), // Convert rows to an object
+      timestamp: new Date().toISOString(), 
       requestId: getRequestId(event)
     });
 
   } catch (error) {
-    console.error(
-      'Error processing request:',
-      error instanceof Error ? error.message : String(error)
-    );
-    
-    return createResponse(500, {
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      requestId: getRequestId(event)
-    });
+    return handleError(error, event);
   }
 };
