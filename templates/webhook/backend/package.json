@@ -29,9 +29,11 @@
     "typescript": "~5.5.0",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",
-    "eslint": "^8.57.0"
+    "eslint": "^8.57.0",
+    "@types/pg": "^8.10.9"
   },
   "dependencies": {
-    "aws-lambda": "^1.0.7"
+    "aws-lambda": "^1.0.7",
+    "pg": "^8.11.3"
   }
 }

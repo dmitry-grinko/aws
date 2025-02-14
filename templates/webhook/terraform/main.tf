@@ -12,6 +12,17 @@ module "vpc" {
   vpc_cidr    = "10.0.0.0/16"
 }
 
+module "secrets_manager" {
+  source = "./modules/secrets-manager"
+
+  environment       = var.environment
+  database_username = var.database_username
+  database_password = var.database_password
+  database_name     = var.database_name
+  database_host     = module.rds.endpoint
+  database_port     = 5432
+}
+
 module "rds" {
   source = "./modules/rds"
 
@@ -39,6 +50,26 @@ module "lambda" {
   filename           = "../backend/function.zip"
   tags               = local.tags
   vpc_id             = module.vpc.vpc_id
+  
+  environment_variables = {
+    SECRETS_ARN = module.secrets_manager.secret_arn
+  }
+
+  # Add permissions to access Secrets Manager
+  additional_policies = [
+    jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Action = [
+            "secretsmanager:GetSecretValue"
+          ]
+          Resource = [module.secrets_manager.secret_arn]
+        }
+      ]
+    })
+  ]
 }
 
 module "api_gateway" {

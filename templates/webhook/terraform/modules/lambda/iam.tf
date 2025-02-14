@@ -64,3 +64,9 @@ resource "aws_iam_role_policy_attachment" "lambda_rds_access" {
 } 
 
 
+resource "aws_iam_role_policy" "additional_policies" {
+  count = length(var.additional_policies)
+  name  = "additional-policy-${count.index}"
+  role  = aws_iam_role.lambda_role.id
+  policy = var.additional_policies[count.index]
+}

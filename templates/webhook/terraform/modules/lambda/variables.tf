@@ -37,3 +37,15 @@ variable "vpc_id" {
   description = "The VPC ID where the Lambda function will be deployed"
   type        = string
 }
+
+variable "environment_variables" {
+  description = "Environment variables for the Lambda function"
+  type        = map(string)
+  default     = {}
+}
+
+variable "additional_policies" {
+  description = "Additional IAM policies to attach to the Lambda role"
+  type        = list(string)
+  default     = []
+}
