@@ -7,7 +7,7 @@ const secretsManager = new SecretsManager();
 // Fetch database credentials once and initialize the pool
 let pool: Pool;
 
-async function initializePool() {
+async function initializePool(): Promise<void> {
   const dbCredentials = await getDatabaseCredentials();
   pool = new Pool({
     host: dbCredentials.host,
@@ -58,7 +58,13 @@ const getRequestId = (event: APIGatewayProxyEvent): string => {
   return event.requestContext?.requestId || 'unknown';
 };
 
-async function getDatabaseCredentials(): Promise<Record<string, any>> {
+async function getDatabaseCredentials(): Promise<{
+  host: string;
+  port: number;
+  name: string;
+  username: string;
+  password: string;
+}> {
   const secretValue = await secretsManager.getSecretValue({
     SecretId: process.env.SECRETS_ARN!
   }).promise();

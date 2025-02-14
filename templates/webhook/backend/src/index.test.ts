@@ -1,27 +1,29 @@
 import { describe, it, expect } from '@jest/globals';
 import { handler } from './index';
 import { APIGatewayProxyEvent } from 'aws-lambda';
-// import jest from 'jest';
-
-// Mock the database and AWS SDK interactions
 import { jest } from '@jest/globals';
-
-interface MockSecretResponse {
-  SecretString: string;
-}
 
 jest.mock('pg', () => ({
   Pool: jest.fn(() => ({
-    connect: () => Promise.resolve({
-      query: () => Promise.resolve({ rows: [{ id: 1, name: 'Test' }] }),
-      release: () => {},
-    })
+    connect: (): Promise<{
+      query: () => Promise<{ rows: { id: number; name: string }[] }>;
+      release: () => void;
+    }> =>
+      Promise.resolve({
+        query: (): Promise<{ rows: { id: number; name: string }[] }> =>
+          Promise.resolve({ rows: [{ id: 1, name: 'Test' }] }),
+        release: () => {},
+      })
   }))
 }));
 
 jest.mock('aws-sdk', () => ({
   SecretsManager: jest.fn(() => ({
-    getSecretValue: () => ({
+    getSecretValue: (): {
+      promise: () => Promise<{
+        SecretString: string;
+      }>;
+    } => ({
       promise: () => Promise.resolve({
         SecretString: JSON.stringify({
           host: 'localhost',
@@ -48,7 +50,7 @@ describe('handler', () => {
         requestId: 'test-request-id',
       },
       // ... other necessary properties ...
-    } as any; // Cast to any to simplify the test setup
+    } as APIGatewayProxyEvent;
 
     const response = await handler(event);
 
