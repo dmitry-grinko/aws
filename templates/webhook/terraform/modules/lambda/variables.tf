@@ -33,7 +33,7 @@ variable "tags" {
   description = "Tags to apply to resources"
 }
 
-variable "rds_arn" {
-  description = "The ARN of the RDS instance"
+variable "vpc_id" {
+  description = "The VPC ID where the Lambda function will be deployed"
   type        = string
 }

@@ -29,7 +29,7 @@ data "aws_iam_policy_document" "lambda_rds_access" {
       "rds:*"
     ]
     resources = [
-      var.rds_arn,
+      "arn:aws:rds:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:db:${var.function_name}-db",
       "arn:aws:rds-db:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:dbuser:*/${var.function_name}"
     ]
   }

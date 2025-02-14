@@ -17,3 +17,7 @@ output "role_name" {
   description = "Name of the Lambda IAM role"
   value       = aws_iam_role.lambda_role.name
 } 
+
+output "security_group_id" {
+  value = aws_security_group.lambda.id
+}
