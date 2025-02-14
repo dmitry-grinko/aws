@@ -6,8 +6,8 @@ on:
     branches:
       - main
     paths:
-      - templates/lambda/backend/**
-      - templates/lambda/terraform/**
+      - templates/webhook/backend/**
+      - templates/webhook/terraform/**
 
 env:
   TF_VAR_aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
