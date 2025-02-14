@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "lambda_assume_role" {
 }
 
 resource "aws_iam_role" "lambda_role" {
-  name               = "${var.function_name}-role"
+  name               = "${var.function_name}-role-${random_string.suffix.result}"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
   tags               = var.tags
 }
@@ -52,7 +52,7 @@ data "aws_caller_identity" "current" {}
 
 # Create the RDS access policy
 resource "aws_iam_policy" "lambda_rds_access" {
-  name        = "${var.function_name}-rds-access"
+  name        = "${var.function_name}-rds-access-${random_string.suffix.result}"
   description = "IAM policy for Lambda to access RDS"
   policy      = data.aws_iam_policy_document.lambda_rds_access.json
 }

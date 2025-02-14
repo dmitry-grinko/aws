@@ -1,6 +1,6 @@
 # Lambda function
 resource "aws_lambda_function" "function" {
-  function_name = var.function_name
+  function_name = "${var.function_name}-${random_string.suffix.result}"
   role         = aws_iam_role.lambda_role.arn
   handler      = var.handler
   runtime      = var.runtime
