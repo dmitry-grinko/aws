@@ -34,7 +34,7 @@ module "rds" {
   allocated_storage        = 20
   lambda_security_group_id = module.lambda.security_group_id
   vpc_id                   = module.vpc.vpc_id
-  subnet_ids               = module.vpc.private_subnet_ids
+  subnet_ids               = module.vpc.public_subnet_ids
   tags                     = local.tags
   depends_on               = [module.vpc]
 }
