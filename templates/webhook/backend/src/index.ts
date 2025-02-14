@@ -40,7 +40,7 @@ const createResponse = (
   body: JSON.stringify(body),
 });
 
-const fetchDataFromDatabase = async (): Promise<QueryResult> => {
+const fetchDataFromDatabase = async (pool: Pool): Promise<QueryResult> => {
   const client = await pool.connect();
   try {
     // Replace 'your_table_name' with your actual table name
@@ -66,7 +66,23 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     console.log('Received event:', JSON.stringify(event, null, 2));
 
-    const result = await fetchDataFromDatabase();
+    // Fetch database credentials
+    const dbCredentials = await getDatabaseCredentials();
+    console.log('Database credentials:', dbCredentials);
+
+    // Update the pool configuration with the fetched credentials
+    const pool = new Pool({
+      host: dbCredentials.host,
+      port: dbCredentials.port,
+      database: dbCredentials.name,
+      user: dbCredentials.username,
+      password: dbCredentials.password,
+      ssl: {
+        rejectUnauthorized: false // Required for AWS RDS SSL connections
+      }
+    });
+
+    const result = await fetchDataFromDatabase(pool);
     
     return createResponse(200, {
       data: result.rows,
