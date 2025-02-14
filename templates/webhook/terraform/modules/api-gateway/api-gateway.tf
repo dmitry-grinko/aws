@@ -21,7 +21,7 @@ resource "aws_apigatewayv2_integration" "lambda" {
 
 resource "aws_apigatewayv2_route" "get_info" {
   api_id = aws_apigatewayv2_api.main.id
-  route_key = "GET /random"
+  route_key = "GET /webhook"
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
@@ -32,3 +32,4 @@ resource "aws_lambda_permission" "api_gw" {
   principal     = "apigateway.amazonaws.com"
   source_arn = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
 } 
+
