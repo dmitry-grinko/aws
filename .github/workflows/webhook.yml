@@ -71,7 +71,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      rds_endpoint: ${{ steps.get-endpoint.outputs.endpoint }}
+      endpoint: ${{ steps.endpoint.outputs.endpoint }}
     
     steps:
       - name: Checkout
@@ -112,20 +112,12 @@ jobs:
         run: terraform -chdir=templates/webhook/terraform apply tfplan
 
       - name: Get Terraform Outputs
-        id: get-endpoint
+        id: endpoint
         run: |
           echo "Getting Terraform outputs..."
-          
-          # Get the output and grep for the endpoint line
           ENDPOINT=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint | grep "amazonaws.com")
           echo "Raw endpoint: $ENDPOINT"
-          
-          # Extract only the hostname part before the port
-          HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
-          echo "Extracted hostname: $HOSTNAME"
-          
-          # Use the new environment file syntax
-          echo "endpoint=$HOSTNAME" >> "$GITHUB_OUTPUT"
+          echo "endpoint=$ENDPOINT" >> "$GITHUB_OUTPUT"
 
   migration:
     runs-on: ubuntu-latest
@@ -157,13 +149,14 @@ jobs:
 
       - name: Run database initialization
         env:
-          DB_HOST: ${{ needs.deploy.outputs.rds_endpoint }}
+          DB_HOST: ${{ needs.deploy.outputs.endpoint }}
           DB_PORT: "5432"
           DB_NAME: ${{ secrets.DATABASE_NAME }}
           DB_USER: ${{ secrets.DATABASE_USERNAME }}
           DB_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
           echo "Running init-db.sh with environment variables:"
+          echo "---> endpoint=${needs.deploy.outputs.endpoint}"
           echo "DB_HOST=${DB_HOST}"
           echo "DB_PORT=${DB_PORT}"
           echo "DB_NAME=${DB_NAME}"
