@@ -70,6 +70,8 @@ jobs:
     needs: build
     permissions:
       contents: write
+    outputs:
+      rds_endpoint: ${{ steps.terraform-outputs.outputs.rds_endpoint }}
     
     steps:
       - name: Checkout
@@ -109,6 +111,11 @@ jobs:
       - name: Terraform Apply
         run: terraform -chdir=templates/webhook/terraform apply tfplan
 
+      - name: Get Terraform Outputs
+        id: terraform-outputs
+        run: |
+          echo "rds_endpoint=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
+
   migration:
     runs-on: ubuntu-latest
     needs: deploy
@@ -137,17 +144,13 @@ jobs:
       - name: Make init script executable
         run: chmod +x templates/webhook/database/init-db.sh
 
-      - name: Get database credentials from AWS Secrets Manager
+      - name: Set database environment variables
         run: |
-          # Get the secret values and set them as environment variables
-          DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "$TF_VAR_project_name-$TF_VAR_environment-db-credentials" --query 'SecretString' --output text)
-          
-          # Extract values using jq and set them as environment variables
-          echo "DB_HOST=$(echo $DB_SECRET | jq -r '.host')" >> $GITHUB_ENV
-          echo "DB_PORT=$(echo $DB_SECRET | jq -r '.port')" >> $GITHUB_ENV
-          echo "DB_NAME=$(echo $DB_SECRET | jq -r '.dbname')" >> $GITHUB_ENV
-          echo "DB_USER=$(echo $DB_SECRET | jq -r '.username')" >> $GITHUB_ENV
-          echo "DB_PASSWORD=$(echo $DB_SECRET | jq -r '.password')" >> $GITHUB_ENV
+          echo "DB_HOST=${{ needs.deploy.outputs.rds_endpoint }}" >> $GITHUB_ENV
+          echo "DB_PORT=5432" >> $GITHUB_ENV
+          echo "DB_NAME=${{ secrets.DATABASE_NAME }}" >> $GITHUB_ENV
+          echo "DB_USER=${{ secrets.DATABASE_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Run database initialization
         run: |
