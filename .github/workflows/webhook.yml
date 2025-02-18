@@ -113,11 +113,8 @@ jobs:
         id: endpoint
         shell: bash
         run: |
-          echo "Getting Terraform outputs..."
-          
           ENDPOINT=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint | grep "amazonaws.com")
           HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
-          echo "db_host: $HOSTNAME"
           echo "db_host=$HOSTNAME" >> $GITHUB_ENV
 
       - name: Install PostgreSQL client
@@ -131,15 +128,6 @@ jobs:
       - name: Make init script executable
         run: chmod +x templates/webhook/database/init-db.sh
 
-      - name: Debug Output
-        run: |
-          echo "DB_HOST: ${{ env.db_host }}"
-          echo "DB_PORT: ${{ env.db_port }}"
-          echo "DB_NAME: ${{ env.db_name }}"
-          echo "DB_USER: ${{ env.db_user }}"
-          echo "DB_PASSWORD: ${{ env.db_password }}"
-
-
       - name: Run database initialization
         env:
           DB_HOST: ${{ env.db_host }}
@@ -148,13 +136,6 @@ jobs:
           DB_USER: ${{ secrets.DATABASE_USERNAME }}
           DB_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
-          echo "Running init-db.sh with environment variables:"
-          echo "DB_HOST=${DB_HOST}"
-          echo "DB_PORT=${DB_PORT}"
-          echo "DB_NAME=${DB_NAME}"
-          echo "DB_USER=${DB_USER}"
-          echo "DB_PASSWORD=${DB_PASSWORD}"
-          
           env | grep DB_
           ./templates/webhook/database/init-db.sh
 
