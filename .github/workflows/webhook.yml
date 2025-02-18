@@ -152,13 +152,11 @@ jobs:
 
       - name: Debug Output
         run: |
-          echo "DB_HOST1=${{ needs.deploy.outputs.host1 }}"
-          echo "DB_HOST2=${{ needs.deploy.outputs.host2 }}"
-          echo "DB_HOSTS=${{ needs.deploy.outputs }}"
+          echo '${{ toJSON(needs.deploy.outputs) }}'
 
       - name: Run database initialization
         env:
-          DB_HOST: ${{ needs.deploy.outputs.db_host }}
+          DB_HOST: ${{ needs.deploy.outputs.host1 }}
           DB_PORT: "5432"
           DB_NAME: ${{ secrets.DATABASE_NAME }}
           DB_USER: ${{ secrets.DATABASE_USERNAME }}
