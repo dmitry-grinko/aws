@@ -120,9 +120,6 @@ jobs:
           HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
           echo "Endpoint: $HOSTNAME"
           echo "endpoint=$HOSTNAME" >> $GITHUB_OUTPUT
-          
-      - name: Print Endpoint
-        run: echo "Endpoint: ${{ needs.deploy.outputs.endpoint }}"
 
   migration:
     runs-on: ubuntu-latest
@@ -151,6 +148,10 @@ jobs:
 
       - name: Make init script executable
         run: chmod +x templates/webhook/database/init-db.sh
+
+      - name: Print Endpoint
+        run: |
+          echo "Endpoint: ${{ needs.deploy.outputs.endpoint }}"
 
       - name: Run database initialization
         env:
