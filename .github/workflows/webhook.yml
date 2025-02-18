@@ -113,6 +113,7 @@ jobs:
 
       - name: Get Terraform Outputs
         id: endpoint
+        shell: bash
         run: |
           echo "Getting Terraform outputs..."
           
