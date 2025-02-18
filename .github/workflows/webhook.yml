@@ -115,14 +115,19 @@ jobs:
         id: terraform-outputs
         run: |
           echo "::debug::Getting Terraform outputs..."
-          ENDPOINT=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint)
+          # Store output in a file to avoid issues with special characters
+          terraform -chdir=templates/webhook/terraform output -raw rds_endpoint > endpoint.txt
+          ENDPOINT=$(cat endpoint.txt)
           echo "::debug::Raw endpoint: $ENDPOINT"
           
           # Extract only the hostname part before the port
           HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
           echo "::debug::Extracted hostname: $HOSTNAME"
           
-          echo "rds_endpoint=$HOSTNAME" >> $GITHUB_OUTPUT
+          # Use delimiter syntax for GitHub output
+          echo "rds_endpoint<<EOF" >> $GITHUB_OUTPUT
+          echo "$HOSTNAME" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "::debug::Set GitHub output rds_endpoint=$HOSTNAME"
 
   migration:
