@@ -114,7 +114,16 @@ jobs:
       - name: Get Terraform Outputs
         id: terraform-outputs
         run: |
-          echo "rds_endpoint=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
+          echo "::debug::Getting Terraform outputs..."
+          ENDPOINT=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint)
+          echo "::debug::Raw endpoint: $ENDPOINT"
+          
+          # Extract only the hostname part before the port
+          HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
+          echo "::debug::Extracted hostname: $HOSTNAME"
+          
+          echo "rds_endpoint=$HOSTNAME" >> $GITHUB_OUTPUT
+          echo "::debug::Set GitHub output rds_endpoint=$HOSTNAME"
 
   migration:
     runs-on: ubuntu-latest
