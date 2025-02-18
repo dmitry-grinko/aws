@@ -17,3 +17,4 @@ output "rds_instance_arn" {
   value       = module.rds.db_instance_arn
   description = "The ARN of the RDS instance"
 }
+

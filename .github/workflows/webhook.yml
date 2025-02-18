@@ -67,12 +67,10 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: build
     permissions:
       contents: write
-    outputs:
-      host1: ${{ steps.endpoint.outputs.db_host1 }}
-      host2: ${{ steps.endpoint.outputs.db_host2 }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -120,25 +118,7 @@ jobs:
           ENDPOINT=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint | grep "amazonaws.com")
           HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
           echo "db_host: $HOSTNAME"
-          echo "db_host1=$HOSTNAME" >> $GITHUB_OUTPUT
-          echo "db_host2=$HOSTNAME" >> $GITHUB_ENV
-
-  migration:
-    runs-on: ubuntu-latest
-    needs: [deploy]
-    permissions:
-      contents: write
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          echo "db_host=$HOSTNAME" >> $GITHUB_ENV
 
       - name: Install PostgreSQL client
         run: |
@@ -153,11 +133,16 @@ jobs:
 
       - name: Debug Output
         run: |
-          echo '${{ toJSON(needs.deploy.outputs) }}'
+          echo "DB_HOST: ${{ env.db_host }}"
+          echo "DB_PORT: ${{ env.db_port }}"
+          echo "DB_NAME: ${{ env.db_name }}"
+          echo "DB_USER: ${{ env.db_user }}"
+          echo "DB_PASSWORD: ${{ env.db_password }}"
+
 
       - name: Run database initialization
         env:
-          DB_HOST: ${{ needs.deploy.outputs.host1 }}
+          DB_HOST: ${{ env.db_host }}
           DB_PORT: "5432"
           DB_NAME: ${{ secrets.DATABASE_NAME }}
           DB_USER: ${{ secrets.DATABASE_USERNAME }}
