@@ -9,6 +9,10 @@ let pool: Pool;
 
 async function initializePool(): Promise<void> {
   const dbCredentials = await getDatabaseCredentials();
+
+  console.log('-------dbCredentials-------', dbCredentials);
+
+
   pool = new Pool({
     host: dbCredentials.host,
     port: dbCredentials.port,
