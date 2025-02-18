@@ -8,6 +8,7 @@ on:
     paths:
       - templates/webhook/backend/**
       - templates/webhook/terraform/**
+      - templates/webhook/database/**
 
 env:
   TF_VAR_aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
