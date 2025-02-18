@@ -21,6 +21,12 @@ resource "aws_db_instance" "postgresql" {
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.this.name
 
+  # Enable SSL/TLS encryption
+  storage_encrypted = true
+  
+  # Force SSL connections
+  parameter_group_name = aws_db_parameter_group.postgresql.name
+
   tags = var.tags
 }
 
@@ -51,6 +57,19 @@ resource "aws_security_group" "rds" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = var.tags
+}
+
+# Add a parameter group to enforce SSL
+resource "aws_db_parameter_group" "postgresql" {
+  family = "postgres16"
+  name   = "${var.identifier}-pg"
+
+  parameter {
+    name  = "rds.force_ssl"
+    value = "1"
   }
 
   tags = var.tags
