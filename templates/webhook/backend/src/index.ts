@@ -4,6 +4,8 @@ import { SecretsManager } from 'aws-sdk';
 
 const secretsManager = new SecretsManager();
 
+const tableName = 'emails';
+
 // Fetch database credentials once and initialize the pool
 let pool: Pool;
 
@@ -36,7 +38,7 @@ interface ResponseBody {
   message?: string;
   error?: string;
   timestamp?: string;
-  requestId: string;
+  requestId: string;  
 }
 
 const createResponse = (
@@ -51,7 +53,7 @@ const createResponse = (
 const fetchDataFromDatabase = async (): Promise<QueryResult> => {
   const client = await pool.connect();
   try {
-    return await client.query('SELECT * FROM your_table_name');
+    return await client.query('SELECT * FROM tableName');
   } finally {
     client.release();
   }
