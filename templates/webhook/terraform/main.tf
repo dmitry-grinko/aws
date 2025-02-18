@@ -19,7 +19,7 @@ module "secrets_manager" {
   database_username = var.database_username
   database_password = var.database_password
   database_name     = var.database_name
-  database_host     = module.rds.endpoint
+  database_host     = element(split(":", module.rds.endpoint), 0)
   database_port     = 5432
 }
 
