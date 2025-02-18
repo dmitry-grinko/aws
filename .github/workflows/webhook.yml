@@ -114,21 +114,24 @@ jobs:
       - name: Get Terraform Outputs
         id: terraform-outputs
         run: |
-          echo "::debug::Getting Terraform outputs..."
+          echo "Getting Terraform outputs..."
           # Store output in a file to avoid issues with special characters
           terraform -chdir=templates/webhook/terraform output -raw rds_endpoint > endpoint.txt
           ENDPOINT=$(cat endpoint.txt)
-          echo "::debug::Raw endpoint: $ENDPOINT"
+          echo "Raw endpoint: $ENDPOINT"
           
           # Extract only the hostname part before the port
           HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
-          echo "::debug::Extracted hostname: $HOSTNAME"
+          echo "Extracted hostname: $HOSTNAME"
           
           # Use delimiter syntax for GitHub output
           echo "rds_endpoint<<EOF" >> $GITHUB_OUTPUT
           echo "$HOSTNAME" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          echo "::debug::Set GitHub output rds_endpoint=$HOSTNAME"
+          echo "Set GitHub output rds_endpoint=$HOSTNAME"
+          
+          echo "Content of GITHUB_OUTPUT file:"
+          cat $GITHUB_OUTPUT
 
   migration:
     runs-on: ubuntu-latest
@@ -160,14 +163,26 @@ jobs:
 
       - name: Set database environment variables
         run: |
+          echo "Setting database environment variables..."
+          echo "RDS Endpoint from deploy job: ${{ needs.deploy.outputs.rds_endpoint }}"
+          
           echo "DB_HOST=${{ needs.deploy.outputs.rds_endpoint }}" >> $GITHUB_ENV
           echo "DB_PORT=5432" >> $GITHUB_ENV
           echo "DB_NAME=${{ secrets.DATABASE_NAME }}" >> $GITHUB_ENV
           echo "DB_USER=${{ secrets.DATABASE_USERNAME }}" >> $GITHUB_ENV
           echo "DB_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> $GITHUB_ENV
+          
+          echo "Current environment variables:"
+          echo "DB_HOST=${DB_HOST}"
+          echo "DB_PORT=${DB_PORT}"
+          echo "DB_NAME=${DB_NAME}"
+          echo "DB_USER=${DB_USER}"
+          echo "DB_PASSWORD=********"
 
       - name: Run database initialization
         run: |
+          echo "Running init-db.sh with environment variables:"
+          env | grep DB_
           ./templates/webhook/database/init-db.sh
 
   # destroy:
