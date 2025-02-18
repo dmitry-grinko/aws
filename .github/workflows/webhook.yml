@@ -108,6 +108,50 @@ jobs:
       - name: Terraform Apply
         run: terraform -chdir=templates/webhook/terraform apply tfplan
 
+  migration:
+    runs-on: ubuntu-latest
+    needs: deploy
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Make init script executable
+        run: chmod +x templates/webhook/database/init-db.sh
+
+      - name: Get database credentials from AWS Secrets Manager
+        run: |
+          # Get the secret values and set them as environment variables
+          DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "$TF_VAR_project_name-$TF_VAR_environment-db-credentials" --query 'SecretString' --output text)
+          
+          # Extract values using jq and set them as environment variables
+          echo "DB_HOST=$(echo $DB_SECRET | jq -r '.host')" >> $GITHUB_ENV
+          echo "DB_PORT=$(echo $DB_SECRET | jq -r '.port')" >> $GITHUB_ENV
+          echo "DB_NAME=$(echo $DB_SECRET | jq -r '.dbname')" >> $GITHUB_ENV
+          echo "DB_USER=$(echo $DB_SECRET | jq -r '.username')" >> $GITHUB_ENV
+          echo "DB_PASSWORD=$(echo $DB_SECRET | jq -r '.password')" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Run database initialization
+        run: |
+          ./templates/webhook/database/init-db.sh
+
   # destroy:
   #   runs-on: ubuntu-latest
     
