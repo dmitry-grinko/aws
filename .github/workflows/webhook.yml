@@ -71,8 +71,8 @@ jobs:
     permissions:
       contents: write
     outputs:
-      DB_HOST: ${{ steps.endpoint.outputs.DB_HOST }}
-    
+      host1: ${{ steps.endpoint.outputs.db_host1 }}
+      host2: ${{ steps.endpoint.outputs.db_host2 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -118,8 +118,9 @@ jobs:
           
           ENDPOINT=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint | grep "amazonaws.com")
           HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
-          echo "DB_HOST: $HOSTNAME"
-          echo "DB_HOST=$HOSTNAME" >> $GITHUB_OUTPUT
+          echo "db_host: $HOSTNAME"
+          echo "db_host1=$HOSTNAME" >> $GITHUB_OUTPUT
+          echo "db_host2=$HOSTNAME" >> $GITHUB_ENV
 
   migration:
     runs-on: ubuntu-latest
@@ -150,11 +151,14 @@ jobs:
         run: chmod +x templates/webhook/database/init-db.sh
 
       - name: Debug Output
-        run: echo "DB_HOST=${{ needs.deploy.outputs.DB_HOST }}"
+        run: |
+          echo "DB_HOST1=${{ needs.deploy.outputs.host1 }}"
+          echo "DB_HOST2=${{ needs.deploy.outputs.host2 }}"
+          echo "DB_HOSTS=${{ needs.deploy.outputs }}"
 
       - name: Run database initialization
         env:
-          DB_HOST: ${{ needs.deploy.outputs.DB_HOST }}
+          DB_HOST: ${{ needs.deploy.outputs.db_host }}
           DB_PORT: "5432"
           DB_NAME: ${{ secrets.DATABASE_NAME }}
           DB_USER: ${{ secrets.DATABASE_USERNAME }}
