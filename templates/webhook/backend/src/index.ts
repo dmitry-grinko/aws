@@ -53,7 +53,7 @@ const createResponse = (
 const fetchDataFromDatabase = async (): Promise<QueryResult> => {
   const client = await pool.connect();
   try {
-    return await client.query('SELECT * FROM tableName');
+    return await client.query(`SELECT * FROM ${tableName}`);
   } finally {
     client.release();
   }
