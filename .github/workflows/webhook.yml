@@ -116,25 +116,19 @@ jobs:
         run: |
           echo "Getting Terraform outputs..."
           
-          # First save the output to a temporary file
-          terraform -chdir=templates/webhook/terraform output -raw rds_endpoint > temp_output.txt
-          
-          # Read the first line only to get the endpoint
-          ENDPOINT=$(head -n 1 temp_output.txt)
+          # Get the output and grep for the endpoint line
+          ENDPOINT=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint | grep "amazonaws.com")
           echo "Raw endpoint: $ENDPOINT"
           
           # Extract only the hostname part before the port
           HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
           echo "Extracted hostname: $HOSTNAME"
           
-          # Set the output using a simpler approach
+          # Set the output
           echo "rds_endpoint=$HOSTNAME" >> "$GITHUB_OUTPUT"
           
           echo "Content of GITHUB_OUTPUT file:"
           cat "$GITHUB_OUTPUT"
-          
-          # Clean up
-          rm temp_output.txt
 
   migration:
     runs-on: ubuntu-latest
