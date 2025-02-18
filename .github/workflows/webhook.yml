@@ -71,7 +71,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      rds_endpoint: ${{ steps.step1.outputs.test }}
+      rds_endpoint: ${{ steps.get-endpoint.outputs.endpoint }}
     
     steps:
       - name: Checkout
@@ -112,7 +112,7 @@ jobs:
         run: terraform -chdir=templates/webhook/terraform apply tfplan
 
       - name: Get Terraform Outputs
-        id: step1
+        id: get-endpoint
         run: |
           echo "Getting Terraform outputs..."
           
@@ -124,8 +124,8 @@ jobs:
           HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
           echo "Extracted hostname: $HOSTNAME"
           
-          # Set the output exactly like in the docs
-          echo "test=$HOSTNAME" >> "$GITHUB_OUTPUT"
+          # Use the new environment file syntax
+          echo "endpoint=$HOSTNAME" >> "$GITHUB_OUTPUT"
 
   migration:
     runs-on: ubuntu-latest
