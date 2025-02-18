@@ -117,8 +117,12 @@ jobs:
           echo "Getting Terraform outputs..."
           
           ENDPOINT=$(terraform -chdir=templates/webhook/terraform output -raw rds_endpoint | grep "amazonaws.com")
-          echo "Endpoint: $(echo "$ENDPOINT" | cut -d':' -f1)"
-          echo "endpoint=$(echo "$ENDPOINT" | cut -d':' -f1)" >> "$GITHUB_OUTPUT"
+          HOSTNAME=$(echo "$ENDPOINT" | cut -d':' -f1)
+          echo "Endpoint: $HOSTNAME"
+          echo "endpoint=$HOSTNAME" >> $GITHUB_OUTPUT
+          
+      - name: Print Endpoint
+        run: echo "Endpoint: ${{ needs.deploy.outputs.endpoint }}"
 
   migration:
     runs-on: ubuntu-latest
