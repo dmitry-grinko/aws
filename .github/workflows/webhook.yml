@@ -151,11 +151,11 @@ jobs:
 
       - name: Print Endpoint
         run: |
-          echo "Endpoint: ${{ needs.deploy.outputs.endpoint }}"
+          echo "Endpoint: ${{ needs.deploy.outputs }}"
 
       - name: Run database initialization
         env:
-          DB_HOST: ${{ needs.deploy.outputs.endpoint }}
+          DB_HOST: ${{ needs.deploy.outputs }}
           DB_PORT: "5432"
           DB_NAME: ${{ secrets.DATABASE_NAME }}
           DB_USER: ${{ secrets.DATABASE_USERNAME }}
